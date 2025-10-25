@@ -1,17 +1,21 @@
 # Análisis de Cargo por Confiabilidad - Base de Datos PostgreSQL
 
-Este proyecto contiene un esquema de base de datos PostgreSQL basado en la estructura de una base de datos Neo4j para el análisis cuantitativo de temas relacionados con la confiabilidad en sistemas eléctricos.
+Este proyecto contiene un esquema de base de datos PostgreSQL para el análisis cuantitativo de temas relacionados con la confiabilidad en sistemas eléctricos.
 
 ## Estructura del Proyecto
 
 - `db.sql`: Esquema completo de la base de datos con tablas, índices y vistas para análisis cuantitativo.
 - `db_data_test.sql`: Datos de prueba para poblar la base de datos.
+- `import.py`: Script de Python para interactuar con la base de datos.
+- `requirements.txt`: Dependencias de Python.
 - `.gitignore`: Archivos a ignorar en el control de versiones.
 
 ## Requisitos
 
 - PostgreSQL instalado y ejecutándose.
 - Conexión a la base de datos (por defecto: `postgresql://postgres:postgres@localhost:5432/postgres`).
+- Python 3.x instalado.
+- Dependencias de Python (instala con `pip install -r requirements.txt`).
 
 ## Instalación y Configuración
 
@@ -30,6 +34,10 @@ Este proyecto contiene un esquema de base de datos PostgreSQL basado en la estru
    psql postgresql://postgres:postgres@localhost:5432/postgres -f db_data_test.sql
    ```
    Esto inserta datos de ejemplo para análisis.
+
+4. **Configurar Python**:
+   - Instala las dependencias: `pip install -r requirements.txt`
+   - Usa scripts como `import.py` para interactuar con la base de datos.
 
 ## Estructura de la Base de Datos
 
@@ -70,10 +78,9 @@ Este proyecto contiene un esquema de base de datos PostgreSQL basado en la estru
    - Ver conteos: `SELECT * FROM node_counts;`
    - Ver impactos: `SELECT * FROM problem_impact_summary;`
    - Ver riesgos: `SELECT * FROM risk_category_summary;`
+3. **Usar Python para Análisis**:
+   - Ejecuta scripts de Python como `import.py` para interactuar con la base de datos y realizar análisis adicionales.
 
-3. **Cargar Datos Reales**:
-   - Exporta datos de Neo4j usando Cypher queries como `MATCH (n) RETURN labels(n), properties(n)`.
-   - Convierte a INSERT statements y ejecútalos en PostgreSQL.
 
 ## Análisis Cuantitativo
 
@@ -97,228 +104,76 @@ Este proyecto es para fines educativos y de análisis.
 
 ```mermaid
 erDiagram
-    SISTEMA {
+    PLANTAS {
         int id PK
         string nombre
-        string tipo
-        string relevancia_rd
-        string funcion
-        string indicador_clave
-        string nombre_completo
     }
-    MECANISMO {
-        int id PK
-        string descripcion
-        string nombre
-        string tipo
-        string problema
-        string funcion
-    }
-    PROBLEMA {
-        int id PK
-        string descripcion
-        string riesgo
-        string impacto
-        string mecanismo
-        string categoria
-        string consecuencia
-        string capas
-        string evidencia
-        string temas_ambiguos
-    }
-    RECOMENDACION {
-        int id PK
-        string impacto_esperado
-        string descripcion
-        string objetivo
-        string caso_ejemplo
-        string prioridad
-    }
-    DOCUMENTO {
-        int id PK
-        string tipo
-        string codigo
-        string descripcion
-        string proposito
-        string relevancia
-        string problema_identificado
-    }
-    ORGANIZACION {
-        int id PK
-        string tipo
-        string rol
-        string nombre
-    }
-    RESOLUCION {
-        int id PK
-        string descripcion
-        string articulo
-        string formula_ihf
-        string codigo
-        date fecha
-        string estado
-        string efecto
-    }
-    COMUNICACION {
-        int id PK
-        string asunto
-        string emisor
-        string codigo
-        date fecha
-        string receptor
-    }
-    RIESGO {
-        int id PK
-        string categoria
-        string impacto
-        string nombre
-        string descripcion
-        string causa
-        string momento
-        string momento_critico
-        string efecto_cascada
-    }
-    CONCEPTO {
-        int id PK
-        string proposito
-        string nombre
-        string objetivo
-        string contexto
-        string tipo
-        string problema_identificado
-        string componentes
-    }
-    METRICA {
+    AGENTES {
         int id PK
         string nombre
-        string tipo
-        string relacion_con_ihf
-        string impacto
-        string nombre_completo
-        string definicion
     }
-    OBLIGACION {
+    RECURSOS {
         int id PK
-        string tipo
-        string definicion
-        string incentivo_financiero
-        string nombre
-        string riesgo
-        string nombre_completo
+        string codigo_sic
+        string tipo_generacion
     }
-    CONSECUENCIA {
+    RRID_ANTES_066_24 {
         int id PK
-        string nombre
-        string tipo
-        string impacto
-        string causa_directa
-        string efecto_en_planeacion
-        string descripcion
-        string categoria
-        string realidad
-        string visibilidad
-        string caracterizacion
+        int planta_id FK
+        bigint rrid_cop
+        bigint rrid_sin_anillos_cop
     }
-    CONDICION {
+    RRID_DESPUES_066_24 {
         int id PK
-        string relacionado_con
-        string tipo
-        string problema_identificado
-        string relevancia
-        string nombre
-        string descripcion
+        int planta_id FK
+        bigint rrid_cop
+        bigint rrid_sin_anillos_cop
     }
-    COMPORTAMIENTO {
+    DDV_REG_VS_DDV_VER {
         int id PK
-        string descripcion
-        string mecanismo
-        string consecuencia
-        string nombre
-        string vacio_regulatorio
-        string tipo
+        int planta_id FK
+        int agente_id FK
+        date fecha_dia
+        bigint kwh_registrado
+        bigint kwh_verificado
     }
-    PLANTA {
+    DDV_VERIFICADA {
         int id PK
-        string nombre
-        string tipo
-        real capacidad_mw
-        real ihf
-        real enficc
-        real oef
-        string estado
+        int planta_id FK
+        int agente_id FK
+        date fecha_dia
+        bigint kwh_verificado
     }
-    HIDROLOGIA {
+    MSEC_REG_VS_MSEC_DESP {
         int id PK
-        string nombre
-        string tipo
-        string descripcion
-        string impacto_en_ihf
-        string severidad
+        int planta_id FK
+        int agente_id FK
+        bigint kwh_registrado
+        bigint kwh_despachado
     }
-    ANILLO_SEGURIDAD {
+    MAPEO_RECURSOS {
         int id PK
-        string nombre
-        string tipo
-        string descripcion
-        string efecto_en_ihf
-        string regulacion
+        int recurso_id FK
+        int agente_id FK
     }
-    MERCADO {
+    MAPEO_AGENTES {
         int id PK
-        string nombre
-        string tipo
-        string descripcion
-        string funcion
-        string impacto_en_confiabilidad
-    }
-    CARGO_CONFIABILIDAD {
-        int id PK
-        string nombre
-        string descripcion
-        string formula
-        string periodo
-        string estado
-    }
-    RELATIONSHIPS {
-        int id PK
-        string from_table
-        int from_id
-        string to_table
-        int to_id
-        string type
+        int recurso_id FK
+        int agente_id FK
+        int planta_id FK
     }
 
-    SISTEMA ||--o{ MECANISMO : "PERTENECE_A"
-    MECANISMO ||--o{ PROBLEMA : "AFECTA_A"
-    PROBLEMA ||--o{ RIESGO : "GENERA"
-    PROBLEMA ||--o{ RECOMENDACION : "SOLUCIONA"
-    PROBLEMA ||--o{ DOCUMENTO : "SOPORTA"
-    MECANISMO ||--o{ RESOLUCION : "DEFINE"
-    MECANISMO ||--o{ COMUNICACION : "ABORDA"
-    MECANISMO ||--o{ METRICA : "RELACIONADA_CON"
-    METRICA ||--o{ OBLIGACION : "BASADA_EN"
-    PROBLEMA ||--o{ CONSECUENCIA : "RESULTA_DE"
-    RIESGO ||--o{ CONDICION : "AGRAVA"
-    MECANISMO ||--o{ COMPORTAMIENTO : "UTILIZA"
-    PLANTA ||--o{ METRICA : "TIENE"
-    PLANTA ||--o{ OBLIGACION : "CUMPLE"
-    HIDROLOGIA ||--o{ MECANISMO : "AFECTA"
-    ANILLO_SEGURIDAD ||--o{ MECANISMO : "MODIFICA"
-    MERCADO ||--o{ MECANISMO : "ES_TIPO_DE"
-    CARGO_CONFIABILIDAD ||--o{ METRICA : "USA"
-    CARGO_CONFIABILIDAD ||--o{ OBLIGACION : "REMUNERA"
-    PROBLEMA }o--o{ MECANISMO : "relationships"
-    RIESGO }o--o{ MECANISMO : "relationships"
-    METRICA }o--o{ MECANISMO : "relationships"
-    OBLIGACION }o--o{ METRICA : "relationships"
-    CONSECUENCIA }o--o{ PROBLEMA : "relationships"
-    CONDICION }o--o{ RIESGO : "relationships"
-    COMPORTAMIENTO }o--o{ MECANISMO : "relationships"
-    PLANTA }o--o{ METRICA : "relationships"
-    PLANTA }o--o{ OBLIGACION : "relationships"
-    HIDROLOGIA }o--o{ MECANISMO : "relationships"
-    ANILLO_SEGURIDAD }o--o{ MECANISMO : "relationships"
-    MERCADO }o--o{ MECANISMO : "relationships"
-    CARGO_CONFIABILIDAD }o--o{ METRICA : "relationships"
-    CARGO_CONFIABILIDAD }o--o{ OBLIGACION : "relationships"
+    PLANTAS ||--o{ RRID_ANTES_066_24 : has
+    PLANTAS ||--o{ RRID_DESPUES_066_24 : has
+    PLANTAS ||--o{ DDV_REG_VS_DDV_VER : has
+    PLANTAS ||--o{ DDV_VERIFICADA : has
+    PLANTAS ||--o{ MSEC_REG_VS_MSEC_DESP : has
+    PLANTAS ||--o{ MAPEO_AGENTES : has
+    AGENTES ||--o{ DDV_REG_VS_DDV_VER : has
+    AGENTES ||--o{ DDV_VERIFICADA : has
+    AGENTES ||--o{ MSEC_REG_VS_MSEC_DESP : has
+    AGENTES ||--o{ MAPEO_RECURSOS : has
+    AGENTES ||--o{ MAPEO_AGENTES : has
+    RECURSOS ||--o{ MAPEO_RECURSOS : has
+    RECURSOS ||--o{ MAPEO_AGENTES : has
 ```
