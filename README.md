@@ -9,6 +9,7 @@ Este proyecto contiene un esquema de base de datos PostgreSQL para el análisis 
 - `import.py`: Script de Python para interactuar con la base de datos.
 - `requirements.txt`: Dependencias de Python.
 - `.gitignore`: Archivos a ignorar en el control de versiones.
+- `explicacion.md`: Documentación detallada del análisis para determinar las top 5 plantas menos confiables, incluyendo pasos, lógica y consultas SQL.
 
 ## Requisitos
 
@@ -41,7 +42,70 @@ Este proyecto contiene un esquema de base de datos PostgreSQL para el análisis 
 
 ## Estructura de la Base de Datos
 
-### Tablas Principales
+### Tablas Principales (Activas)
+Las siguientes tablas están activas en el esquema actual y se utilizan para el análisis de confiabilidad de plantas eléctricas.
+
+- **plantas**:
+  - `id` (integer): Identificador único de la planta.
+  - `nombre` (text): Nombre de la planta eléctrica.
+
+- **agentes**:
+  - `id` (integer): Identificador único del agente.
+  - `nombre` (text): Nombre del agente involucrado en el sistema.
+
+- **rrid_antes_066_24**:
+  - `id` (integer): Identificador único del registro.
+  - `planta_id` (integer): Referencia a la planta (FK a plantas.id).
+  - `rrid_cop` (bigint): Valor de RRID en COP antes de la resolución 066-24 (índice de confiabilidad).
+  - `rrid_sin_anillos_cop` (bigint): Valor de RRID sin anillos en COP.
+
+- **rrid_despues_066_24**:
+  - `id` (integer): Identificador único del registro.
+  - `planta_id` (integer): Referencia a la planta (FK a plantas.id).
+  - `rrid_cop` (bigint): Valor de RRID en COP después de la resolución 066-24.
+  - `rrid_sin_anillos_cop` (bigint): Valor de RRID sin anillos en COP.
+
+- **ddv_reg_vs_ddv_ver**:
+  - `id` (integer): Identificador único del registro.
+  - `planta_id` (integer): Referencia a la planta (FK a plantas.id).
+  - `agente_id` (integer): Referencia al agente (FK a agentes.id).
+  - `fecha_dia` (date): Fecha del registro.
+  - `kwh_registrado` (bigint): Energía registrada en kWh.
+  - `kwh_verificado` (bigint): Energía verificada en kWh.
+
+- **ddv_verificada**:
+  - `id` (integer): Identificador único del registro.
+  - `planta_id` (integer): Referencia a la planta (FK a plantas.id).
+  - `agente_id` (integer): Referencia al agente (FK a agentes.id).
+  - `fecha_dia` (date): Fecha del registro.
+  - `kwh_verificado` (bigint): Energía verificada en kWh.
+
+- **msec_reg_vs_msec_desp**:
+  - `id` (integer): Identificador único del registro.
+  - `planta_id` (integer): Referencia a la planta (FK a plantas.id).
+  - `agente_id` (integer): Referencia al agente (FK a agentes.id).
+  - `kwh_registrado` (bigint): Energía registrada en kWh.
+  - `kwh_despachado` (bigint): Energía despachada en kWh.
+
+- **recursos**:
+  - `id` (integer): Identificador único del recurso.
+  - `codigo_sic` (text): Código SIC del recurso.
+  - `tipo_generacion` (text): Tipo de generación (e.g., hidráulica, térmica).
+
+- **mapeo_recursos**:
+  - `id` (integer): Identificador único del mapeo.
+  - `recurso_id` (integer): Referencia al recurso (FK a recursos.id).
+  - `agente_id` (integer): Referencia al agente (FK a agentes.id).
+
+- **mapeo_agentes**:
+  - `id` (integer): Identificador único del mapeo.
+  - `recurso_id` (integer): Referencia al recurso (FK a recursos.id).
+  - `agente_id` (integer): Referencia al agente (FK a agentes.id).
+  - `planta_id` (integer): Referencia a la planta (FK a plantas.id).
+
+### Tablas Comentadas (No Activas)
+Las siguientes tablas están comentadas en el esquema y no se utilizan en el análisis actual, pero representan entidades adicionales para análisis más amplio.
+
 - **sistema**: Sistemas eléctricos (e.g., Transmisión, Generación).
 - **mecanismo**: Mecanismos de control y protección.
 - **problema**: Problemas que afectan los mecanismos.
@@ -79,8 +143,20 @@ Este proyecto contiene un esquema de base de datos PostgreSQL para el análisis 
    - Ver impactos: `SELECT * FROM problem_impact_summary;`
    - Ver riesgos: `SELECT * FROM risk_category_summary;`
 3. **Usar Python para Análisis**:
-   - Ejecuta scripts de Python como `import.py` para interactuar con la base de datos y realizar análisis adicionales.
+    - Ejecuta scripts de Python como `import.py` para interactuar con la base de datos y realizar análisis adicionales.
 
+## Análisis de Confiabilidad de Plantas
+
+Este análisis fue realizado por una inteligencia artificial (Kilo Code) utilizando el protocolo Model Context Protocol (MCP) para conectar y consultar la base de datos PostgreSQL. Se determinaron las top 5 plantas menos confiables basado en discrepancias en los reportes de energía (diferencias entre kWh registrados y verificados/despachados). El análisis utiliza consultas SQL para calcular métricas de inconsistencia.
+
+- **Top 5 Plantas Menos Confiables**:
+  1. Planta E
+  2. Planta K
+  3. Planta I
+  4. Planta O
+  5. Planta C
+
+Para detalles completos, incluyendo pasos, lógica y consultas SQL, consulta `explicacion.md`.
 
 ## Análisis Cuantitativo
 
