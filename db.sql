@@ -173,6 +173,60 @@ CREATE TABLE comportamiento (
     tipo TEXT
 );
 
+-- New tables based on Neo4j insights
+
+-- Planta table (Power Plants)
+CREATE TABLE planta (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT,
+    tipo TEXT,
+    capacidad_mw REAL,
+    ihf REAL,
+    enficc REAL,
+    oef REAL,
+    estado TEXT
+);
+
+-- Hidrologia table (Hydrology Conditions)
+CREATE TABLE hidrologia (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT,
+    tipo TEXT,
+    descripcion TEXT,
+    impacto_en_ihf TEXT,
+    severidad TEXT
+);
+
+-- AnilloSeguridad table (Safety Rings)
+CREATE TABLE anillo_seguridad (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT,
+    tipo TEXT,
+    descripcion TEXT,
+    efecto_en_ihf TEXT,
+    regulacion TEXT
+);
+
+-- Mercado table (Secondary Market)
+CREATE TABLE mercado (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT,
+    tipo TEXT,
+    descripcion TEXT,
+    funcion TEXT,
+    impacto_en_confiabilidad TEXT
+);
+
+-- CargoConfiabilidad table (Reliability Charge)
+CREATE TABLE cargo_confiabilidad (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT,
+    descripcion TEXT,
+    formula TEXT,
+    periodo TEXT,
+    estado TEXT
+);
+
 -- Relationships table (general for all types)
 CREATE TABLE relationships (
     id SERIAL PRIMARY KEY,
@@ -191,6 +245,12 @@ CREATE INDEX idx_riesgo_categoria ON riesgo(categoria);
 CREATE INDEX idx_recomendacion_prioridad ON recomendacion(prioridad);
 CREATE INDEX idx_resolucion_fecha ON resolucion(fecha);
 CREATE INDEX idx_comunicacion_fecha ON comunicacion(fecha);
+CREATE INDEX idx_planta_tipo ON planta(tipo);
+CREATE INDEX idx_planta_ihf ON planta(ihf);
+CREATE INDEX idx_hidrologia_tipo ON hidrologia(tipo);
+CREATE INDEX idx_anillo_seguridad_tipo ON anillo_seguridad(tipo);
+CREATE INDEX idx_mercado_tipo ON mercado(tipo);
+CREATE INDEX idx_cargo_confiabilidad_estado ON cargo_confiabilidad(estado);
 CREATE INDEX idx_relationships_from ON relationships(from_table, from_id);
 CREATE INDEX idx_relationships_to ON relationships(to_table, to_id);
 CREATE INDEX idx_relationships_type ON relationships(type);
@@ -228,6 +288,16 @@ UNION ALL
 SELECT 'condicion', COUNT(*) FROM condicion
 UNION ALL
 SELECT 'comportamiento', COUNT(*) FROM comportamiento
+UNION ALL
+SELECT 'planta', COUNT(*) FROM planta
+UNION ALL
+SELECT 'hidrologia', COUNT(*) FROM hidrologia
+UNION ALL
+SELECT 'anillo_seguridad', COUNT(*) FROM anillo_seguridad
+UNION ALL
+SELECT 'mercado', COUNT(*) FROM mercado
+UNION ALL
+SELECT 'cargo_confiabilidad', COUNT(*) FROM cargo_confiabilidad
 ORDER BY count DESC;
 
 -- Relationship counts by type
@@ -288,15 +358,40 @@ FROM comunicacion
 GROUP BY emisor
 ORDER BY count DESC;
 
+-- New views for added tables
+
+-- Plants by IHF level
+CREATE VIEW plant_ihf_summary AS
+SELECT ihf, COUNT(*) as count
+FROM planta
+GROUP BY ihf
+ORDER BY ihf;
+
+-- Hydrology impact on IHF
+CREATE VIEW hydrology_ihf_impact AS
+SELECT h.nombre as hydrology_name, h.impacto_en_ihf, COUNT(p.id) as affected_plants
+FROM hidrologia h
+LEFT JOIN relationships r ON r.to_table = 'hidrologia' AND r.to_id = h.id
+LEFT JOIN planta p ON r.from_table = 'planta' AND r.from_id = p.id
+GROUP BY h.id, h.nombre, h.impacto_en_ihf;
+
+-- Safety rings effect on mechanisms
+CREATE VIEW anillo_mecanismo_effect AS
+SELECT a.nombre as anillo_name, a.efecto_en_ihf, COUNT(m.id) as related_mechanisms
+FROM anillo_seguridad a
+LEFT JOIN relationships r ON r.to_table = 'anillo_seguridad' AND r.to_id = a.id
+LEFT JOIN mecanismo m ON r.from_table = 'mecanismo' AND r.from_id = m.id
+GROUP BY a.id, a.nombre, a.efecto_en_ihf;
+
 -- Sample data insertion (placeholders; replace with actual Neo4j export)
 INSERT INTO sistema (nombre, tipo, relevancia_rd, funcion, indicador_clave, nombre_completo) VALUES
-('Sample System', 'Operational', 'High', 'Control Function', 'Indicator1', 'Full System Name');
+('SIN Colombia', 'Sistema Interconectado Nacional', 'Alta', 'Interconexión de generación y demanda', 'IHF, ENFICC', 'Sistema Interconectado Nacional de Colombia');
 
 INSERT INTO mecanismo (descripcion, nombre, tipo, problema, funcion) VALUES
-('Sample mechanism description', 'Mechanism 1', 'Control', 'Problem1', 'Function1');
+('Métrica de confiabilidad', 'IHF', 'Índice de Indisponibilidad Histórica Forzada', 'Distorsión por anillos de seguridad', 'Medir indisponibilidad de plantas');
 
 INSERT INTO problema (descripcion, riesgo, impacto, mecanismo, categoria, consecuencia, capas, evidencia, temas_ambiguos) VALUES
-('Problem description', 'Risk1', 'High', 'Mech1', 'Category1', 'Consequence1', 'Layer1', 'Evidence1', 'Ambiguous1');
+('Distorsión del IHF por cobertura de anillos de seguridad', 'Alto', 'Sobreestimación de la ENFICC', 'IHF', 'Cálculo de Métricas', 'Capacidad inflada', 'Regulatoria', 'Resoluciones CREG', 'Descuentos en IHF');
 
 -- Add more inserts as needed based on actual data
 
